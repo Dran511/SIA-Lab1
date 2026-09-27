@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main class="app-container">
+
+        <div class="top-bar">
+            <div class="brand">
+                <span class="brand-icon">+</span>
+                <span>Calculator</span>
+            </div>
+
+            <span class="connection-status">
+                <span class="status-dot"></span>
+                Online
+            </span>
+        </div>
+
+        <section class="calculator">
+
+            <div class="calculator-heading">
+                <div>
+                    <p class="eyebrow">SYSTEM INTEGRATION</p>
+                    <h1>Calculate anything.</h1>
+                </div>
+
+                <button class="clear-all" id="clearAll">
+                    AC
+                </button>
+            </div>
+
+            <div class="display-panel">
+                <p class="expression" id="expression">
+                    Ready to calculate
+                </p>
+
+                <div class="display-value" id="display">
+                    0
+                </div>
+            </div>
+
+            <div class="calculator-body">
+
+                <div class="keypad">
+
+                    <button class="key function-key" data-action="clear">
+                        C
+                    </button>
+
+                    <button class="key function-key" data-action="sign">
+                        +/−
+                    </button>
+
+                    <button class="key function-key" data-action="percent">
+                        %
+                    </button>
+
+                    <button class="key operator-key" data-operation="divide">
+                        ÷
+                    </button>
+
+                    <button class="key number-key" data-number="7">
+                        7
+                    </button>
+
+                    <button class="key number-key" data-number="8">
+                        8
+                    </button>
+
+                    <button class="key number-key" data-number="9">
+                        9
+                    </button>
+
+                    <button class="key operator-key" data-operation="multiply">
+                        ×
+                    </button>
+
+                    <button class="key number-key" data-number="4">
+                        4
+                    </button>
+
+                    <button class="key number-key" data-number="5">
+                        5
+                    </button>
+
+                    <button class="key number-key" data-number="6">
+                        6
+                    </button>
+
+                    <button class="key operator-key" data-operation="subtract">
+                        −
+                    </button>
+
+                    <button class="key number-key" data-number="1">
+                        1
+                    </button>
+
+                    <button class="key number-key" data-number="2">
+                        2
+                    </button>
+
+                    <button class="key number-key" data-number="3">
+                        3
+                    </button>
+
+                    <button class="key operator-key" data-operation="add">
+                        +
+                    </button>
+
+                    <button class="key number-key zero-key" data-number="0">
+                        0
+                    </button>
+
+                    <button class="key number-key" data-number=".">
+                        .
+                    </button>
+
+                    <button class="key equals-key" data-action="calculate">
+                        =
+                    </button>
+
+                </div>
+
+                <div class="bottom-options">
+                    <button class="secondary-button" id="squareRoot">
+                        √ Square Root
+                    </button>
+
+                    <button class="secondary-button" id="powerButton">
+                        x² Power
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="result-panel">
+
+                <div class="result-heading">
+                    <span>Service Response</span>
+                    <span class="api-label">API</span>
+                </div>
+
+                <pre id="result">
+Your calculation result will appear here.
+                </pre>
+
+            </div>
+
+            <div class="history-panel">
+
+                <div class="history-heading">
+                    <span>Calculation History</span>
+
+                    <button id="clearHistory">
+                        Clear
+                    </button>
+                </div>
+
+                <div id="historyList" class="history-list">
+
+                    <p class="empty-history">
+                        No calculations yet.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <p class="footer">
+            Node.js Gateway
+            <span>•</span>
+            Python Calculation Service
+        </p>
+
+    </main>
+
+
+    <script>
+
+        const display =
+            document.getElementById("display");
+
+        const expression =
+            document.getElementById("expression");
+
+        const resultDisplay =
+            document.getElementById("result");
+
+        const clearAllButton =
+            document.getElementById("clearAll");
+
+        const squareRootButton =
+            document.getElementById("squareRoot");
+
+        const powerButton =
+            document.getElementById("powerButton");
+
+        const historyList =
+            document.getElementById("historyList");
+
+        const clearHistoryButton =
+            document.getElementById("clearHistory");
+
+
+        let currentInput = "";
+
+        let firstNumber = null;
+
+        let selectedOperation = null;
+
+        let waitingForSecondNumber = false;
+
+
+        let calculationHistory =
+            JSON.parse(
+                localStorage.getItem("calculationHistory")
+            ) || [];
+
+
+        const operationSymbols = {
+
+            add: "+",
+
+            subtract: "−",
+
+            multiply: "×",
+
+            divide: "÷",
+
+            modulo: "%",
+
+            power: "^"
+
+        };
+
+
+        function updateDisplay() {
+
+            display.textContent =
+                currentInput || "0";
+
+
+            if (
+                firstNumber !== null &&
+                selectedOperation
+            ) {
+
+                expression.textContent =
+                    `${firstNumber} ${operationSymbols[selectedOperation]}`;
+
+            } else {
+
+                expression.textContent =
+                    "Ready to calculate";
+
+            }
+
+        }
+
+
+        function clearCalculator() {
+
+            currentInput = "";
+
+            firstNumber = null;
+
+            selectedOperation = null;
+
+            waitingForSecondNumber = false;
+
+
+            display.textContent = "0";
+
+            expression.textContent =
+                "Ready to calculate";
+
+
+            resultDisplay.textContent =
+                "Your calculation result will appear here.";
+
+
+            resultDisplay.classList.remove("error");
+
+        }
+
+
+        function addNumber(number) {
+
+            if (waitingForSecondNumber) {
+
+                currentInput = "";
+
+                waitingForSecondNumber = false;
+
+            }
+
+
+            if (
+                number === "." &&
+                currentInput.includes(".")
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                number === "." &&
+                currentInput === ""
+            ) {
+
+                currentInput = "0";
+
+            }
+
+
+            currentInput += number;
+
+            updateDisplay();
+
+        }
+
+
+        function chooseOperation(operation) {
+
+            if (
+                currentInput === "" &&
+                firstNumber === null
+            ) {
+
+                return;
+
+            }
+
+
+            if (firstNumber === null) {
+
+                firstNumber =
+                    Number(currentInput);
+
+            } else if (
+                currentInput !== "" &&
+                !waitingForSecondNumber
+            ) {
+
+                calculate(false);
+
+            }
+
+
+            selectedOperation = operation;
+
+            waitingForSecondNumber = true;
+
+            updateDisplay();
+
+        }
+
+
+        function changeSign() {
+
+            if (currentInput === "") {
+
+                return;
+
+            }
+
+
+            currentInput =
+                String(
+                    Number(currentInput) * -1
+                );
+
+
+            updateDisplay();
+
+        }
+
+
+        function convertToPercent() {
+
+            if (currentInput === "") {
+
+                return;
+
+            }
+
+
+            currentInput =
+                String(
+                    Number(currentInput) / 100
+                );
+
+
+            updateDisplay();
+
+        }
+
+
+        function addToHistory(
+            calculationExpression,
+            calculationResult
+        ) {
+
+            const currentTime =
+                new Date().toLocaleString([], {
+
+                    dateStyle: "short",
+
+                    timeStyle: "short"
+
+                });
+
+
+            const historyItem = {
+
+                expression:
+                    calculationExpression,
+
+                result:
+                    calculationResult,
+
+                time:
+                    currentTime
+
+            };
+
+
+            calculationHistory.unshift(
+                historyItem
+            );
+
+
+            if (
+                calculationHistory.length > 20
+            ) {
+
+                calculationHistory =
+                    calculationHistory.slice(0, 20);
+
+            }
+
+
+            localStorage.setItem(
+                "calculationHistory",
+                JSON.stringify(calculationHistory)
+            );
+
+
+            renderHistory();
+
+        }
+
+
+        function renderHistory() {
+
+            historyList.innerHTML = "";
+
+
+            if (
+                calculationHistory.length === 0
+            ) {
+
+                historyList.innerHTML =
+                    '<p class="empty-history">No calculations yet.</p>';
+
+                return;
+
+            }
+
+
+            calculationHistory.forEach(item => {
+
+                const historyItem =
+                    document.createElement("div");
+
+                historyItem.className =
+                    "history-item";
+
+
+                const historyDetails =
+                    document.createElement("div");
+
+                historyDetails.className =
+                    "history-details";
+
+
+                const historyExpression =
+                    document.createElement("div");
+
+                historyExpression.className =
+                    "history-expression";
+
+
+                historyExpression.textContent =
+                    item.expression;
+
+
+                const historyTime =
+                    document.createElement("div");
+
+                historyTime.className =
+                    "history-time";
+
+
+                historyTime.textContent =
+                    item.time;
+
+
+                const historyResult =
+                    document.createElement("div");
+
+                historyResult.className =
+                    "history-result";
+
+
+                historyResult.textContent =
+                    "= " + item.result;
+
+
+                historyDetails.appendChild(
+                    historyExpression
+                );
+
+
+                historyDetails.appendChild(
+                    historyTime
+                );
+
+
+                historyItem.appendChild(
+                    historyDetails
+                );
+
+
+                historyItem.appendChild(
+                    historyResult
+                );
+
+
+                historyList.appendChild(
+                    historyItem
+                );
+
+            });
+
+        }
+
+
+        async function calculate(
+            showResult = true
+        ) {
+
+            if (
+                firstNumber === null ||
+                selectedOperation === null
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                currentInput === "" ||
+                waitingForSecondNumber
+            ) {
+
+                return;
+
+            }
+
+
+            const secondNumber =
+                Number(currentInput);
+
+
+            const requestData = {
+
+                num1: firstNumber,
+
+                num2: secondNumber,
+
+                operation: selectedOperation
+
+            };
+
+
+            const calculationExpression =
+                `${firstNumber} ${operationSymbols[selectedOperation]} ${secondNumber}`;
+
+
+            expression.textContent =
+                calculationExpression;
+
+
+            resultDisplay.textContent =
+                "Calculating...";
+
+
+            resultDisplay.classList.remove(
+                "error"
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/calculate",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    requestData
+                                )
+
+                        }
+                    );
+
+
+                const responseText =
+                    await response.text();
+
+
+                let data;
+
+
+                try {
+
+                    data =
+                        JSON.parse(responseText);
+
+                } catch {
+
+                    throw new Error(
+                        responseText ||
+                        "Server returned an empty response."
+                    );
+
+                }
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Request failed."
+                    );
+
+                }
+
+
+                const pythonResult =
+                    data.python_result;
+
+
+                const finalResult =
+                    pythonResult.result;
+
+
+                display.textContent =
+                    finalResult;
+
+
+                currentInput =
+                    String(finalResult);
+
+
+                resultDisplay.textContent =
+                    JSON.stringify(
+                        data,
+                        null,
+                        2
+                    );
+
+
+                if (showResult) {
+
+                    addToHistory(
+                        calculationExpression,
+                        finalResult
+                    );
+
+                }
+
+
+                if (showResult) {
+
+                    firstNumber = null;
+
+                    selectedOperation = null;
+
+                    waitingForSecondNumber =
+                        false;
+
+                }
+
+
+            } catch (error) {
+
+                resultDisplay.textContent =
+                    "Error: " + error.message;
+
+
+                resultDisplay.classList.add(
+                    "error"
+                );
+
+            }
+
+        }
+
+
+        async function calculateSquareRoot() {
+
+            if (currentInput === "") {
+
+                return;
+
+            }
+
+
+            const number =
+                Number(currentInput);
+
+
+            const calculationExpression =
+                `√ ${number}`;
+
+
+            expression.textContent =
+                calculationExpression;
+
+
+            resultDisplay.textContent =
+                "Calculating...";
+
+
+            resultDisplay.classList.remove(
+                "error"
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/api/calculate",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    num1: number,
+
+                                    num2: 0,
+
+                                    operation:
+                                        "square_root"
+
+                                })
+
+                        }
+                    );
+
+
+                const responseText =
+                    await response.text();
+
+
+                let data;
+
+
+                try {
+
+                    data =
+                        JSON.parse(responseText);
+
+                } catch {
+
+                    throw new Error(
+                        responseText ||
+                        "Server returned an empty response."
+                    );
+
+                }
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Request failed."
+                    );
+
+                }
+
+
+                const finalResult =
+                    data.python_result.result;
+
+
+                display.textContent =
+                    finalResult;
+
+
+                currentInput =
+                    String(finalResult);
+
+
+                resultDisplay.textContent =
+                    JSON.stringify(
+                        data,
+                        null,
+                        2
+                    );
+
+
+                addToHistory(
+                    calculationExpression,
+                    finalResult
+                );
+
+
+                firstNumber = null;
+
+                selectedOperation = null;
+
+                waitingForSecondNumber =
+                    false;
+
+
+            } catch (error) {
+
+                resultDisplay.textContent =
+                    "Error: " + error.message;
+
+
+                resultDisplay.classList.add(
+                    "error"
+                );
+
+            }
+
+        }
+
+
+        function choosePower() {
+
+            chooseOperation("power");
+
+        }
+
+
+        document
+            .querySelectorAll("[data-number]")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        addNumber(
+                            button.dataset.number
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document
+            .querySelectorAll("[data-operation]")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        chooseOperation(
+                            button.dataset.operation
+                        );
+
+                    }
+                );
+
+            });
+
+
+        document
+            .querySelectorAll("[data-action]")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const action =
+                            button.dataset.action;
+
+
+                        if (action === "clear") {
+
+                            currentInput = "";
+
+                            updateDisplay();
+
+                        }
+
+
+                        if (action === "sign") {
+
+                            changeSign();
+
+                        }
+
+
+                        if (action === "percent") {
+
+                            convertToPercent();
+
+                        }
+
+
+                        if (action === "calculate") {
+
+                            calculate();
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+        clearAllButton.addEventListener(
+            "click",
+            clearCalculator
+        );
+
+
+        squareRootButton.addEventListener(
+            "click",
+            calculateSquareRoot
+        );
+
+
+        powerButton.addEventListener(
+            "click",
+            choosePower
+        );
+
+
+        clearHistoryButton.addEventListener(
+            "click",
+            () => {
+
+                calculationHistory = [];
+
+                localStorage.removeItem(
+                    "calculationHistory"
+                );
+
+                renderHistory();
+
+            }
+        );
+
+
+        renderHistory();
+
+        updateDisplay();
+
+    </script>
+
+</body>
+</html>
